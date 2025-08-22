@@ -49,9 +49,8 @@ require 'module_latest.pm';
 
 my $current_version = "2.0";
 
-my $mode = ""; # deciding what you want POTION to do. Currently POTION
-                     # supports "site" for entire site-model analysis or 
-                     # "branch-" for entire branch-model analysis.
+my $mode = ""; # deciding what you want POTION to do.POTION supports "site" for site-model analysis, 
+               #"branch" for branch-model analysis and "branch-site" for branch-site-model analysis.
 
 my $create_conf = ""; # boolean to control if you wish POTION to create an empty 
                       # configuration file for you
@@ -262,7 +261,7 @@ while (@id_rec_to_process > 0 || @f_tree_to_process > 0 || @model8_to_process > 
       create_codon_alignment_files ($sequence_data_ref, $tmp_id2id_ref, \$ortholog_group);
       filter_divergent_sequences ($parameters_ref, $sequence_data_ref, $clusters_ref, $tmp_id2id_ref, $id2tmp_id_ref, \$ortholog_group); 
       trim_sequences ($parameters_ref, \$ortholog_group);
-      if ($parameters_ref->{recombination_qvalue} !~ /N.A./ and $parameters_ref->{recombination_qvalue} !~ 0) {
+      if ($parameters_ref->{recombination_qvalue} !~ /N.A./ and $parameters_ref->{recombination_qvalue} != 0) {
         identify_recombination ($parameters_ref, \$ortholog_group);
       } else {
         print("\tSkipping recombination!\n");

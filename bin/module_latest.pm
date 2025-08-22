@@ -1,13 +1,13 @@
 ################################################################################
 ##                                                                            ##
 ##                                                                            ##
-## Authors: Francisco Pereira Lobo, Jorge Augusto Hongo, Thieres Tayroni      ##
-## Martins da Silva, Leonardo Vinicius Dias da Silva                          ##
+## Authors: Thieres Tayroni Martins da Silva , Leonardo Vinicius Dias,        ##
+## Jorge Augusto Hongo, Francisco Pereira Lobo                                ##
 ## this program is free software: you can redistribute it and/or modify       ##
 ## it under the terms of the GNU General Public License as published by the   ##
 ## Free Software Foundation, version 3 of the License.                        ##
 ##                                                                            ##
-## module_latest.pm is distributed in the hope that it will be usefull        ##
+## module_latest.pm is distributed in the hope that it will be useful         ##
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of             ##
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                       ##
 ## See the GNU General Public License for more details.                       ##
@@ -417,7 +417,7 @@ sub check_parameters { #check for all parameters,
 
 
   # -=-=-= EXTERNAL ERROR HANDLING =-=-=-
-  if (!defined $parameters->{tries} || $parameters->{tries} !~ /^\d+$/ || !exists($parameters->{tries})) { $parameters->{tries} = 3; } # must be a number, and not a negative one; also must be an integer
+  if (!defined $parameters->{tries} || $parameters->{tries} !~ /^\d+$/ || !exists($parameters->{tries})) { $parameters->{tries} = 1; } # must be a number, and not a negative one; also must be an integer
 
   if (!defined $parameters->{project_dir_path} or !exists($parameters->{project_dir_path})) {die "Project directory not configured. Please set project_dir_path element in configuration file\n";}
 
@@ -433,7 +433,16 @@ sub check_parameters { #check for all parameters,
 
   if (($parameters->{homology_filter} !~ /[0|1|2|3|4]/)) {die "You must set the parameter \"behavior_about_bad_clusters\" with an integer ranging from 0 to 2, please check POTION documentation form more instructions about this parameter\n";}
 
-
+  $flag = 0;
+  if ($parameters->{remove_gaps} =~ /^(strict|strictplus|noallgaps)$/) {
+    $flag = 1;
+  }
+  elsif ($parameters->{remove_gaps} =~ /^\d*\.?\d+$/ && $parameters->{remove_gaps} >= 0 && $parameters->{remove_gaps} <= 1) {
+      $flag = 1;
+  }
+  if ($flag == 0){
+    die ("The possibles values for the parameter remove_gaps is strict, strictplus, noallgaps or a number between 0 and 1\n");
+  }
 #group identity parameters
 
   if (!defined $parameters->{min_group_identity} or !exists($parameters->{min_group_identity})) {
@@ -1388,7 +1397,7 @@ sub parse_pairs_file {
       }
     }
  
-    if ($line =~ /^#Percentage of identity matrix:/) { #removing sequences or groups containning sequences with mean identity bellow user-defined cutoff
+    if ($line =~ /Identity sequences matrix/) { #removing sequences or groups containning sequences with mean identity bellow user-defined cutoff
       $flag = 2;
       my $count = 0;
       until ($line =~ /^\n$/) {
@@ -1698,12 +1707,9 @@ sub trim_sequences {
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -gt $parameters->{remove_gaps} -phylip_paml\n");
           my $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -gt $parameters->{remove_gaps} -phylip_paml")};
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -gt $parameters->{remove_gaps} -phylip_paml\n");
-          $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -gt $parameters->{remove_gaps}-phylip_paml")};
+          $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -gt $parameters->{remove_gaps} -phylip_paml")};
         } else {
-          print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -noallgaps -phylip_paml\n");
-          my $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -noallgaps -phylip_paml")};
-          print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -noallgaps -phylip_paml\n");
-          $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -noallgaps -phylip_paml")};
+          die();
         }
       }
       else {
@@ -1718,13 +1724,16 @@ sub trim_sequences {
           my $stderr = capture_stderr {system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -strict -colnumbering > $$ortholog_group.trimal_cols.aa")};
           
           #takes as input the $group.trimal_cols.aa file, which contais the columns positions trimmed and uses this to trim nucleotide aligned sequences
-          create_trimmed_nucleotide_files($ortholog_group); 
+          create_trimmed_nucleotide_files($ortholog_group);
         }
-        else {
+        elsif ($parameters->{remove_gaps} eq "noallgaps") {
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -noallgaps -phylip_paml\n");
           my $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -noallgaps -phylip_paml")};
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -noallgaps -phylip_paml\n");
           $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -noallgaps -phylip_paml")};
+        }
+        else {
+         die();
         }
       }
       move("$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i", "$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim");
@@ -3337,7 +3346,6 @@ sub manage_task_allocation {
 
           # Checking whether the group must be removed from the analysis by the criteria in the parameters and taking the proper actions
           if (($parameters->{recombination_qvalue} <=  0)||($parameters->{recombination_qvalue} =~ /N\.A\./i)||($parameters->{rec_minimum_confirmations} =~ /N\.A\./i)) {
-          #  print("HAHAHAHAHA1\n\n");
             push(@{$f_tree_to_process}, "$group;f_tree");
           }
 
