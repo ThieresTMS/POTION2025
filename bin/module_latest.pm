@@ -24,7 +24,7 @@ use warnings;
 
 # the next two lines of code are turning off BioPerl warnings. I did this
 # because of this bug:
-# http://bioperl.org/pipermail/bioperl-l/2010-December/034334.html
+# http://bioperl.org/pipermail/bioperl  -l/2010-December/034334.html
 # http://web.archiveorange.com/archive/v/Nz9auiWLv8lzndHiEKAp 
 # if you are developing POTION, remember to comment the two lines below to see 
 # eventual new real bugs in POTION
@@ -109,6 +109,7 @@ sub read_config_files { #read config files in the form element = value #comment
   $parameters{reference_genome_file} = read_config_file_line('reference_genome_file', '', $fh_user_config);
   $parameters{groups_to_process} = read_config_file_line('groups_to_process', '', $fh_user_config);
   $parameters{codon_table} = read_config_file_line('codon_table', '', $fh_user_config);
+  $parameters{clean_data} = read_config_file_line ('clean_data', '', $fh_user_config);
   $parameters{additional_start_codons} = read_config_file_line('additional_start_codons', '', $fh_user_config);
   $parameters{additional_stop_codons} = read_config_file_line('additional_stop_codons', '', $fh_user_config);
   $parameters{recombination_qvalue} = read_config_file_line('recombination_qvalue', '', $fh_user_config);
@@ -1382,7 +1383,7 @@ sub parse_pairs_file {
       $line =~ s/^## AverageIdentity\t+//;
       $mean_identity = $line;
       $mean_identity = $mean_identity * 100;
-      print LOG ("Mean identity for cluster $$tmp_ortholog_group: $mean_identity\tCutoff: ".$parameters->{min_group_identity}."\n\n");
+      print LOG ("Mean identity for cluster $$tmp_ortholog_group: $mean_identity\tCutoff: ".$parameters->{min_group_identity}." ".$parameters->{max_group_identity}."\n");
       if ($mean_identity < $parameters->{min_group_identity}) {
         print LOG "REMOVE_GROUP_FLAG\tQUALITY\t$$tmp_ortholog_group :mean group sequence identity ($mean_identity) smaller than cutoff:".$parameters->{min_group_identity}."\n";
         open (DUMMY,">>$$tmp_ortholog_group.group_status");
@@ -1412,6 +1413,7 @@ sub parse_pairs_file {
         splice(@aux, $count, 1); #removing position $count, which is the position that contains identity of 
         $count++;
         my $mean = dispersion_measure_2(\@aux, $parameters->{sequence_identity_average_metric});
+        $mean = $mean * 100;
         if ($mean < $parameters->{min_sequence_identity}) { #removing sequence and groups if mean sequence identity with other sequences in groups are bellow user-defined cutoff
           $seq_flags{$id} = 1;
           print LOG "REMOVE_SEQUENCE_FLAG\tQUALITY\t"."*$id* (".$tmpid2id_ref->{$id}.")  excluded: mean identity with other member groups of $$tmp_ortholog_group ($mean) is smaller than cutoff (".$parameters->{min_sequence_identity}.")\n";
@@ -1701,11 +1703,13 @@ sub trim_sequences {
         if ($parameters->{remove_gaps} >= 1) {
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -nogaps -phylip_paml\n");
           my $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -nogaps -phylip_paml")};
+          $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.interleaved -nogaps")};
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -nogaps -phylip_paml\n");
           $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -nogaps -phylip_paml")};
         } elsif ($parameters->{remove_gaps} < 1 && $parameters->{remove_gaps} > 0) {
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -gt $parameters->{remove_gaps} -phylip_paml\n");
           my $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -gt $parameters->{remove_gaps} -phylip_paml")};
+          $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.interleaved -gt $parameters->{remove_gaps}")};
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -gt $parameters->{remove_gaps} -phylip_paml\n");
           $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -gt $parameters->{remove_gaps} -phylip_paml")};
         } else {
@@ -1729,8 +1733,10 @@ sub trim_sequences {
         elsif ($parameters->{remove_gaps} eq "noallgaps") {
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -noallgaps -phylip_paml\n");
           my $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -noallgaps -phylip_paml")};
+          $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.interleaved -noallgaps")};
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -noallgaps -phylip_paml\n");
           $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -noallgaps -phylip_paml")};
+
         }
         else {
          die();
@@ -1802,6 +1808,7 @@ sub create_trimmed_nucleotide_files {
     }
   $lines =~ s/\s+//g;
   $lines =~ s/\n//g;
+  $lines =~ s/#ColumnsMap//g;
   my @indexes = split(/,/, $lines); # the collumn indexes to be taken from nucleotide aligned files
   open (OUT, ">$outfile") ||
     die;
@@ -2172,6 +2179,9 @@ sub create_paml_config_files {
         my $icode = $parameters->{codon_table} - 1;
         print $fh_config_file ("icode = $icode\n");
       } 
+      if ($line =~ /cleandata/){
+        print $fh_config_file ("cleandata = $parameters->{clean_data}\n");
+      }
       else { print $fh_config_file ("$line\n"); }
     }
     close ($fh_config_model);
@@ -2179,7 +2189,7 @@ sub create_paml_config_files {
     move("$$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.paml.model$$model.config.i", "$$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.paml.model$$model.config") || die ("Problem at creating codeml's configuration file for group $$ortholog_group (model $$model).\n");
   }elsif ($parameters->{mode} eq "branchsite") {
     if (-s "$$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.paml.model$$model.config") { return; }
-    open (my $fh_config_model, "<", "$$potion_path/../config_files/codeml$$model.branch.ctl") || die ("Couldn't find the model file $$model from codeml (codeml$$model.branch.ctl): $!\n");                 
+    open (my $fh_config_model, "<", "$$potion_path/../config_files/codeml$$model.branchsite.ctl") || die ("Couldn't find the model file $$model from codeml (codeml$$model.branch.ctl): $!\n");                 
     print $fh_config_file ("seqfile = $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim\n"); # .phy file used for sequence
     print $fh_config_file ("treefile = $$ortholog_group.dummy_tree\n"); # .final_tree file with the consensus tree generated by phylip, uses the aminoacid file
     print $fh_config_file ("outfile = $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.paml.model$$model.i\n");
@@ -2192,6 +2202,9 @@ sub create_paml_config_files {
       if ($line =~ /icode/) {
         my $icode = $parameters->{codon_table} - 1;
         print $fh_config_file ("icode = $icode\n");
+      }
+      if ($line =~ /cleandata/){
+        print $fh_config_file ("cleandata = $parameters->{clean_data}\n");
       }
       else { print $fh_config_file ("$line\n"); }
     }
@@ -2214,6 +2227,9 @@ sub create_paml_config_files {
         my $icode = $parameters->{codon_table} - 1;
         print $fh_config_file ("icode = $icode\n");
       } 
+      if ($line =~ /cleandata/){
+        print $fh_config_file ("cleandata = $parameters->{clean_data}\n");
+      }
       else { print $fh_config_file ("$line\n"); }
     }
     close ($fh_config_model);
@@ -3056,7 +3072,7 @@ sub print_results {
   my ($fh_result_file, $fh_result_interleaved, $ortholog_group, $parameters, $gene_id, $selected_aminoacids, $model) = @_;
   #  print "\t=>\t$$fh_result_file, $$fh_result_interleaved, $$ortholog_group, $parameters, $$gene_id, $selected_aminoacids, $model\n";
   my $ortholog_dir = "$parameters->{project_dir_path}/intermediate_files/" . $$ortholog_group . '/';
-  open (my $fh_trim_file, "<", "$ortholog_dir$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim");
+  open (my $fh_trim_file, "<", "$ortholog_dir$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.interleaved");
 
   my $line = <$fh_trim_file>;
   my $n_sequences = $1 if ($line =~ /^\s(\d+)/);
