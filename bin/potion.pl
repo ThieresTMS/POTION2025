@@ -261,7 +261,7 @@ while (@id_rec_to_process > 0 || @f_tree_to_process > 0 || @model8_to_process > 
       create_codon_alignment_files ($sequence_data_ref, $tmp_id2id_ref, \$ortholog_group);
       filter_divergent_sequences ($parameters_ref, $sequence_data_ref, $clusters_ref, $tmp_id2id_ref, $id2tmp_id_ref, \$ortholog_group); 
       trim_sequences ($parameters_ref, \$ortholog_group);
-      if ($parameters_ref->{recombination_qvalue} !~ /N.A./ and $parameters_ref->{recombination_qvalue} != 0) {
+      if ($parameters_ref->{recombination_qvalue} !~ /N.A./ and $parameters_ref->{recombination_qvalue} ne 0) {
         identify_recombination ($parameters_ref, \$ortholog_group);
       } else {
         print("\tSkipping recombination!\n");
