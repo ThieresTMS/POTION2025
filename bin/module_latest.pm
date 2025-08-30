@@ -24,7 +24,7 @@ use warnings;
 
 # the next two lines of code are turning off BioPerl warnings. I did this
 # because of this bug:
-# http://bioperl.org/pipermail/bioperl  -l/2010-December/034334.html
+# http://bioperl.org/pipermail/bioperl-l/2010-December/034334.html
 # http://web.archiveorange.com/archive/v/Nz9auiWLv8lzndHiEKAp 
 # if you are developing POTION, remember to comment the two lines below to see 
 # eventual new real bugs in POTION
@@ -1704,12 +1704,14 @@ sub trim_sequences {
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -nogaps -phylip_paml\n");
           my $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -nogaps -phylip_paml")};
           $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.interleaved -nogaps")};
+          fix_phylip("$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.interleaved");
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -nogaps -phylip_paml\n");
           $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -nogaps -phylip_paml")};
         } elsif ($parameters->{remove_gaps} < 1 && $parameters->{remove_gaps} > 0) {
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -gt $parameters->{remove_gaps} -phylip_paml\n");
           my $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -gt $parameters->{remove_gaps} -phylip_paml")};
           $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.interleaved -gt $parameters->{remove_gaps}")};
+          fix_phylip("$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.interleaved");
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -gt $parameters->{remove_gaps} -phylip_paml\n");
           $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -gt $parameters->{remove_gaps} -phylip_paml")};
         } else {
@@ -1720,6 +1722,7 @@ sub trim_sequences {
         if ($parameters->{remove_gaps} eq "strictplus") {
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -strictplus -colnumbering > $$ortholog_group.trimal_cols.aa\n");
           my $stder = capture_stderr {system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -strictplus -colnumbering > $$ortholog_group.trimal_cols.aa")};
+
           #takes as input the $group.trimal_cols.aa file, which contais the columns positions trimmed and uses this to trim nucleotide aligned sequences
           create_trimmed_nucleotide_files($ortholog_group);
         }
@@ -1734,6 +1737,7 @@ sub trim_sequences {
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -noallgaps -phylip_paml\n");
           my $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i -noallgaps -phylip_paml")};
           $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.aa.phy -out $$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.interleaved -noallgaps")};
+          fix_phylip("$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.interleaved");
           print LOG ("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -noallgaps -phylip_paml\n");
           $stderr = capture_stderr{system("$parameters->{trimal_path} -in $$ortholog_group.cluster.aa.fa.aln.nt.phy -out $$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i -noallgaps -phylip_paml")};
 
@@ -1744,8 +1748,8 @@ sub trim_sequences {
       }
       move("$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.i", "$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim");
       move("$$ortholog_group.cluster.aa.fa.aln.nt.phy.trim.i", "$$ortholog_group.cluster.aa.fa.aln.nt.phy.trim");
-      #fix_phylip("$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim");
-      #fix_phylip("$$ortholog_group.cluster.aa.fa.aln.nt.phy.trim");
+      fix_phylip("$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim");
+      fix_phylip("$$ortholog_group.cluster.aa.fa.aln.nt.phy.trim");
     } catch {
       if ($tries >= $parameters->{tries} && !-s "$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim" || !-s "$$ortholog_group.cluster.aa.fa.aln.nt.phy.trim" && defined $_) {
         print LOG_ERR ("Couldn't trim the sequences for group $$ortholog_group.\nError: $_\n\n");
@@ -2385,7 +2389,7 @@ sub parse_dn_ds_results {
   #    open ($fh_un_mH0H1_sequences, ">", "$parameters->{project_dir_path}/results/$parameters->{result_positive}.uncertain_mH0H1.fasta");
   }
   if (defined $nested_models_to_be_tested{"mM0M1"}) {
-    open ($fh_pos_mH0H1_sequences, ">", "$parameters->{project_dir_path}/results/$parameters->{result_positive}.positives_mM0M1.fasta")||die("Cant create file $parameters->{project_dir_path}/results/$parameters->{result_positive}.positives_mM0M1.fasta");
+    open ($fh_pos_mM0M1_sequences, ">", "$parameters->{project_dir_path}/results/$parameters->{result_positive}.positives_mM0M1.fasta")||die("Cant create file $parameters->{project_dir_path}/results/$parameters->{result_positive}.positives_mM0M1.fasta");
   }
 
   open (my $fh_recombinants, ">", "$parameters->{project_dir_path}/results/$parameters->{result_recombinants}");
@@ -2894,6 +2898,7 @@ sub parse_dn_ds_results {
       } elsif ($q_values_H0H1->{$ortholog_group} < $parameters->{qvalue}) {
         print $fh_table ('P', "\t");
         print_results($fh_positive, $fh_positive_interleaved, \$ortholog_group, $parameters, \$data{$ortholog_group}{gene_id}, \$data{$ortholog_group}{selected_aminoacids_H1}, 'model H1');
+        print_for_enrichment_analysis($fh_pos_mH0H1_sequences, \$ortholog_group, $parameters, $tmp_id2id_ref);
         if (defined $q_values_H0H1->{$ortholog_group} && $q_values_H0H1->{$ortholog_group} < $parameters->{qvalue}) {
         }
       } elsif ($p_value_H0H1{$ortholog_group} < $parameters->{pvalue}) {
@@ -2933,6 +2938,7 @@ sub parse_dn_ds_results {
       } elsif ($q_values_M0M1->{$ortholog_group} < $parameters->{qvalue}) {
         print $fh_table ('P', "\t");
         print_results($fh_positive, $fh_positive_interleaved, \$ortholog_group, $parameters, \$data{$ortholog_group}{gene_id}, \$data{$ortholog_group}{selected_aminoacids_M1}, 'model M1');
+        print_for_enrichment_analysis($fh_pos_mM0M1_sequences, \$ortholog_group, $parameters, $tmp_id2id_ref);
         if (defined $q_values_M0M1->{$ortholog_group} && $q_values_M0M1->{$ortholog_group} < $parameters->{qvalue}) {
         }
       } elsif ($p_value_M0M1{$ortholog_group} < $parameters->{pvalue}) {
@@ -3072,8 +3078,13 @@ sub print_results {
   my ($fh_result_file, $fh_result_interleaved, $ortholog_group, $parameters, $gene_id, $selected_aminoacids, $model) = @_;
   #  print "\t=>\t$$fh_result_file, $$fh_result_interleaved, $$ortholog_group, $parameters, $$gene_id, $selected_aminoacids, $model\n";
   my $ortholog_dir = "$parameters->{project_dir_path}/intermediate_files/" . $$ortholog_group . '/';
-  open (my $fh_trim_file, "<", "$ortholog_dir$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.interleaved");
-
+  my $fh_trim_file;
+  if ($parameters->{remove_gaps} =~ /strict/){
+    open ($fh_trim_file, "<", "$ortholog_dir$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim");
+  }
+  else {
+    open ($fh_trim_file, "<", "$ortholog_dir$$ortholog_group.cluster.aa.fa.aln.aa.phy.trim.interleaved");
+  }
   my $line = <$fh_trim_file>;
   my $n_sequences = $1 if ($line =~ /^\s(\d+)/);
   my $alignment_size = $1 if ($line =~ /(\d+)$/);
