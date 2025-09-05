@@ -3690,10 +3690,10 @@ sub trim_tree_file {
         close DUMMY;
       }
     }
-    print Dumper (@labels);
+    #print Dumper (@labels);
     my $label_count = scalar(@labels);
     my $back_count = $label_count -1;
-    print "$label_count $back_count\n";
+    #print "$label_count $back_count\n";
 
     if (($back_count < $parameters->{minimum_taxa_background})||($back_count > $parameters->{maximum_taxa_background})) {
       if (defined $clusters->{$$ortholog_group}) {
