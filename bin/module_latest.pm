@@ -1195,12 +1195,14 @@ sub create_protein_alignment_files {
     $tries++;
     try {
       if (!defined $parameters->{multiple_alignment} || $parameters->{multiple_alignment} =~ /muscle/i) {  # For now, MUSCLE is the default program to run
-        print LOG ("$parameters->{muscle_path} -in ./$$ortholog_group.cluster.aa.fa -out ./$$ortholog_group.cluster.aa.fa.aln.2.fas -log ./$$ortholog_group.cluster.aa.fa.aln.log -quiet\n");
-        my $stderr = capture_stderr {system ("$parameters->{muscle_path} -in ./$$ortholog_group.cluster.aa.fa -out ./$$ortholog_group.cluster.aa.fa.aln.2.fas -log ./$$ortholog_group.cluster.aa.fa.aln.log -quiet")};
+        print LOG ("$parameters->{muscle_path} -align ./$$ortholog_group.cluster.aa.fa -output ./$$ortholog_group.cluster.aa.fa.aln.2.fas -log ./$$ortholog_group.cluster.aa.fa.aln.log -threads 1 -quiet\n");
+        my $stderr = capture_stderr {system ("$parameters->{muscle_path} -align ./$$ortholog_group.cluster.aa.fa -output ./$$ortholog_group.cluster.aa.fa.aln.2.fas --log ./$$ortholog_group.cluster.aa.fa.aln.log -threads 1 -quiet")};
         if ($stderr) {
-          open (OUTERR,">>$$ortholog_group.group_status");
-          print OUTERR "STOP\nError during sequence alignment using muscle\n$stderr\n";
-          close OUTERR;
+	  if ($stderr !~ m/warning/i){
+            open (OUTERR,">>$$ortholog_group.group_status");
+            print OUTERR "STOP\nError during sequence alignment using muscle\n$stderr\n";
+            close OUTERR;
+  	  }
         }
       } elsif ($parameters->{multiple_alignment} =~ /mafft/i) {
         print LOG ("$parameters->{mafft_path} --auto $$ortholog_group.cluster.aa.fa > ./$$ortholog_group.cluster.aa.fa.aln.2.fas\n");
@@ -3690,10 +3692,10 @@ sub trim_tree_file {
         close DUMMY;
       }
     }
-    print Dumper (@labels);
+    #print Dumper (@labels);
     my $label_count = scalar(@labels);
     my $back_count = $label_count -1;
-    print "$label_count $back_count\n";
+    #print "$label_count $back_count\n";
 
     if (($back_count < $parameters->{minimum_taxa_background})||($back_count > $parameters->{maximum_taxa_background})) {
       if (defined $clusters->{$$ortholog_group}) {

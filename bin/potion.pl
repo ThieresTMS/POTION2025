@@ -317,4 +317,5 @@ print ("Analysis finished, closing POTION.\n") if $parameters_ref->{verbose};
 
 close(SUMMARY);
 close(LOG_ERR);
+
 close(LOG);
