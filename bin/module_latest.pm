@@ -1195,12 +1195,14 @@ sub create_protein_alignment_files {
     $tries++;
     try {
       if (!defined $parameters->{multiple_alignment} || $parameters->{multiple_alignment} =~ /muscle/i) {  # For now, MUSCLE is the default program to run
-        print LOG ("$parameters->{muscle_path} -align ./$$ortholog_group.cluster.aa.fa -output ./$$ortholog_group.cluster.aa.fa.aln.2.fas -log ./$$ortholog_group.cluster.aa.fa.aln.log -quiet\n");
-        my $stderr = capture_stderr {system ("$parameters->{muscle_path} -align ./$$ortholog_group.cluster.aa.fa -output ./$$ortholog_group.cluster.aa.fa.aln.2.fas --log ./$$ortholog_group.cluster.aa.fa.aln.log -quiet")};
+        print LOG ("$parameters->{muscle_path} -align ./$$ortholog_group.cluster.aa.fa -output ./$$ortholog_group.cluster.aa.fa.aln.2.fas -log ./$$ortholog_group.cluster.aa.fa.aln.log -threads 1 -quiet\n");
+        my $stderr = capture_stderr {system ("$parameters->{muscle_path} -align ./$$ortholog_group.cluster.aa.fa -output ./$$ortholog_group.cluster.aa.fa.aln.2.fas --log ./$$ortholog_group.cluster.aa.fa.aln.log -threads 1 -quiet")};
         if ($stderr) {
-          open (OUTERR,">>$$ortholog_group.group_status");
-          print OUTERR "STOP\nError during sequence alignment using muscle\n$stderr\n";
-          close OUTERR;
+	        if ($stderr !~ m/warning/i){
+            open (OUTERR,">>$$ortholog_group.group_status");
+            print OUTERR "STOP\nError during sequence alignment using muscle\n$stderr\n";
+            close OUTERR;
+  	      }
         }
       } elsif ($parameters->{multiple_alignment} =~ /mafft/i) {
         print LOG ("$parameters->{mafft_path} --auto $$ortholog_group.cluster.aa.fa > ./$$ortholog_group.cluster.aa.fa.aln.2.fas\n");
